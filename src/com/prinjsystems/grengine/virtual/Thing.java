@@ -42,19 +42,23 @@ public class Thing {
 	
 	private SimpleModel model;
 	
+	private Universe u;
+	
 	/**
 	 * Simple constructor
 	 */
-	public Thing() {
+	public Thing(Universe u) {
 		trMode = TRANSFORM_ROTATE_DEFINITIVE;
 		
 		bg = new BranchGroup();
+		
+		this.u = u;
 	}
 	
 	/**
 	 * Complete constructor
 	 */
-	public Thing(String modelLocation, String[] names) {
+	public Thing(String modelLocation, String[] names, Universe u) {
 		trMode = TRANSFORM_ROTATE_DEFINITIVE;
 		
 		bg = new BranchGroup();
@@ -77,6 +81,8 @@ public class Thing {
 			e.printStackTrace();
 			System.exit(-1);
 		}
+		
+		this.u = u;
 	}
 	
 	/**
@@ -106,19 +112,19 @@ public class Thing {
 	 */
 	public void rotate(double x, double y, double z) {
 		if(trMode == TRANSFORM_ROTATE_DEFINITIVE) {
-			model.rotate(x, y, z);
+			model.rotate(Math.toRadians(x), Math.toRadians(y), Math.toRadians(z));
 		} else if(trMode == TRANSFORM_ROTATE_ADDICTIVE) {
 			rX += x;
 			rY += y;
 			rZ += z;
 			
-			model.rotate(rX, rY, rZ);
+			model.rotate(Math.toRadians(rX), Math.toRadians(rY), Math.toRadians(rZ));
 		} else if(trMode == TRANSFORM_ROTATE_SUBTRACTIVE) {
 			rX -= x;
 			rY -= y;
 			rZ -= z;
 			
-			model.rotate(rX, rY, rZ);
+			model.rotate(Math.toRadians(rX), Math.toRadians(rY), Math.toRadians(rZ));
 		}
 	}
 	
@@ -130,19 +136,19 @@ public class Thing {
 	 */
 	public void translate(double x, double y, double z) {
 		if(trMode == TRANSFORM_ROTATE_DEFINITIVE) {
-			model.translate(x, y, z);
+			model.translate(x * u.getDeltaTime(), y * u.getDeltaTime(), z * u.getDeltaTime());
 		} else if(trMode == TRANSFORM_ROTATE_ADDICTIVE) {
 			tX += x;
 			tY += y;
 			tZ += z;
 			
-			model.translate(tX, tY, tZ);
+			model.translate(tX * u.getDeltaTime(), tY * u.getDeltaTime(), tZ * u.getDeltaTime());
 		} else if(trMode == TRANSFORM_ROTATE_SUBTRACTIVE) {
 			tX -= x;
 			tY -= y;
 			tZ -= z;
 			
-			model.translate(tX, tY, tZ);
+			model.translate(tX * u.getDeltaTime(), tY * u.getDeltaTime(), tZ * u.getDeltaTime());
 		}
 	}
 	
@@ -192,6 +198,39 @@ public class Thing {
 		model.setAllReflectionMaterials(ambientColor, emissiveColor, diffuseColor, specularColor, shiness);
 	}
 	
+	public Color getReflectionAmbientColor(int index) {
+		return model.getReflectionAmbientColor(index);
+	}
+	
+	public Color getReflectionEmissiveColor(int index) {
+		return model.getReflectionEmissiveColor(index);
+	}
+	
+	public Color getReflectionDiffuseColor(int index) {
+		return model.getReflectionDiffuseColor(index);
+	}
+	
+	public Color getReflectionSpecularColor(int index) {
+		return model.getReflectionSpecularColor(index);
+	}
+	
+	public void addFormMaterial(Color ambientColor, Color emissiveColor, Color diffuseColor, 
+			Color specularColor, float shiness) {
+		model.addFormMaterial(ambientColor, emissiveColor, diffuseColor, specularColor, shiness);
+	}
+	
+	public void mixMaterials(int materialIndex, int formMaterialIndex) {
+		model.mixMaterials(materialIndex, formMaterialIndex);
+	}
+	
+	/**
+	 * Mix all current reflection materials with the specified form material.
+	 * @param formMaterialIndex Index of the form material to be integrated to all reflection materials.
+	 */
+	public void mixAllMaterials(int formMaterialIndex) {
+		model.mixAllMaterials(formMaterialIndex);
+	}
+	
 	/**
 	 * Compile the model in the {@link BranchGroup} and return it.
 	 * @return The compiled {@link BranchGroup}.
@@ -204,5 +243,9 @@ public class Thing {
 		
 		bg.compile();
 		return bg;
+	}
+	
+	public SimpleModel getPrimitiveModel() {
+		return model;
 	}
 }
