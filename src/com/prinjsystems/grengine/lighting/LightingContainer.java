@@ -5,7 +5,10 @@ import java.util.List;
 
 import javax.media.j3d.TransformGroup;
 
-public class LightingContainer {
+/**
+ * This class only wrap all LightComponent things in Universe.
+ */
+public final class LightingContainer {
 	
 	private List<LightComponent> lights;
 	
