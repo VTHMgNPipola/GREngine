@@ -3,6 +3,7 @@ package com.prinjsystems.grengine;
 import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.GraphicsConfiguration;
+import java.awt.GraphicsEnvironment;
 import java.awt.event.WindowEvent;
 import java.awt.event.WindowListener;
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import javax.media.j3d.BoundingSphere;
 import javax.media.j3d.Bounds;
 import javax.media.j3d.BranchGroup;
 import javax.media.j3d.Canvas3D;
+import javax.media.j3d.GraphicsConfigTemplate3D;
 import javax.media.j3d.Node;
 import javax.media.j3d.Texture;
 import javax.media.j3d.View;
@@ -31,7 +33,7 @@ import com.sun.j3d.utils.image.TextureLoader;
 import com.sun.j3d.utils.universe.SimpleUniverse;
 import com.sun.j3d.utils.universe.Viewer;
 
-public class Universe implements Runnable {
+public final class Universe implements Runnable {
 	
 	private SimpleUniverse universe;
 	
@@ -58,23 +60,32 @@ public class Universe implements Runnable {
 	
 	private Camera camera;
 	
+	private long lastTime;
+	private int deltaTime;
+	
 	/*
 	 * Version! \/\/\/\/\/\/\/
 	 */
 	/**
 	 * This is the version of GREngine!
 	 */
-	public static final String grengineVersion = "dev0.9.9.3";
+	public static final String grengineVersion = "dev0.9.9.3 update 4";
 	/*
 	 * Version! /\/\/\/\/\/\/\
 	 */
 	
+	/**
+	 * Secondary constructor of Universe.
+	 * @param w Width of the frame.
+	 * @param h Height of the frame.
+	 * @param camera Camera component to attach.
+	 */
 	public Universe(int w, int h, Camera camera) {
-		System.out.println("---->");
-		System.out.println("--->");
-		System.out.println("--> GREngine " + grengineVersion + " start! <--");
-		System.out.println("--->");
-		System.out.println("---->");
+		System.err.println("---->");
+		System.err.println("--->");
+		System.err.println("--> GREngine " + grengineVersion + " start! <--");
+		System.err.println("--->");
+		System.err.println("---->");
 		
 		vSyncEnable = false;
 		fpsCap = 60;
@@ -130,7 +141,10 @@ public class Universe implements Runnable {
 		});
 		frame.setTitle("Game");
 		
-		gConfs = SimpleUniverse.getPreferredConfiguration();
+		GraphicsConfigTemplate3D gct3D= new GraphicsConfigTemplate3D();
+		gct3D.setSceneAntialiasing(GraphicsConfigTemplate3D.REQUIRED);
+		gConfs = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().
+				getBestConfiguration(gct3D);
 		canvas = new Canvas3D(gConfs);
 		
 		Viewer v = new Viewer(canvas);
@@ -151,10 +165,104 @@ public class Universe implements Runnable {
 		BoundingSphere bounds = new BoundingSphere(new Point3d(0.0, 0.0, 0.0), 1000.0);
 		
 		ambientLight = new AmbientLight(new Color3f(Color.white));
-		ambientLight.setBounds(bounds);
+		ambientLight.setInfluencingBounds(bounds);
 		
 		back = new Background(new Color3f(0, 191, 255));
 		back.setApplicationBounds(bounds);
+		
+		lastTime = 0;
+	}
+	
+	/**
+	 * Default constructor of Universe.
+	 * @param w Width of the frame.
+	 * @param h Height of the frame.
+	 */
+	public Universe(int w, int h) {
+		System.err.println("---->");
+		System.err.println("--->");
+		System.err.println("--> GREngine " + grengineVersion + " start! <--");
+		System.err.println("--->");
+		System.err.println("---->");
+		
+		vSyncEnable = false;
+		fpsCap = 60;
+		
+		container = new LightingContainer();
+		
+		dimension = new Dimension(w, h);
+		frame = new JFrame();
+		frame.setSize(dimension);
+		frame.setDefaultCloseOperation(JFrame.DO_NOTHING_ON_CLOSE);
+		frame.addWindowListener(new WindowListener() {
+			
+			@Override
+			public void windowOpened(WindowEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void windowIconified(WindowEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void windowDeiconified(WindowEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void windowDeactivated(WindowEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void windowClosing(WindowEvent e) {
+				destroy();
+			}
+			
+			@Override
+			public void windowClosed(WindowEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+			
+			@Override
+			public void windowActivated(WindowEvent e) {
+				// TODO Auto-generated method stub
+				
+			}
+		});
+		frame.setTitle("Game");
+		
+		GraphicsConfigTemplate3D gct3D= new GraphicsConfigTemplate3D();
+		gct3D.setSceneAntialiasing(GraphicsConfigTemplate3D.REQUIRED);
+		gConfs = GraphicsEnvironment.getLocalGraphicsEnvironment().getDefaultScreenDevice().
+				getBestConfiguration(gct3D);
+		canvas = new Canvas3D(gConfs);
+		
+		universe = new SimpleUniverse(canvas);
+		
+		frame.add(canvas);
+		
+		things = new ArrayList<>();
+		alternativeNodes = new ArrayList<>();
+		
+		main = new BranchGroup();
+		
+		BoundingSphere bounds = new BoundingSphere(new Point3d(0.0, 0.0, 0.0), 1000.0);
+		
+		ambientLight = new AmbientLight(new Color3f(Color.white));
+		ambientLight.setInfluencingBounds(bounds);
+		
+		back = new Background(new Color3f(0, 191, 255));
+		back.setApplicationBounds(bounds);
+		
+		lastTime = 0;
 	}
 	
 	/**
@@ -182,17 +290,21 @@ public class Universe implements Runnable {
 	}
 	
 	/**
-	 * Adds an primitive Node or Leaf to the secondary rendering list.
+	 * Adds an primitive Node or Leaf to the secondary rendering list. This method is so primitive, now use 
+	 * addLightComponent to add a light thing.
 	 * @param node Node or Leaf to be added.
 	 */
+	@Deprecated
 	public void addAlternativeNode(Node node) {
 		alternativeNodes.add(node);
 	}
 	
 	/**
-	 * Adds a group of Nodes or Leafs to the secondary rendering list.
+	 * Adds a group of Nodes or Leafs to the secondary rendering list. This method is so primitive, now use 
+	 * addAllLightComponent to add a group of light things.
 	 * @param nodes A Collection of Nodes or Leafs to be added.
 	 */
+	@Deprecated
 	public void addAllAlternativeNodes(Collection<Node> nodes) {
 		alternativeNodes.addAll(nodes);
 	}
@@ -211,7 +323,7 @@ public class Universe implements Runnable {
 	 * @param bounds The new bounds of AmbientLight.
 	 */
 	public void setAmbientLightBounds(Bounds bounds) {
-		ambientLight.setBounds(bounds);
+		ambientLight.setInfluencingBounds(bounds);
 	}
 	
 	/**
@@ -235,20 +347,35 @@ public class Universe implements Runnable {
 	}
 	
 	/**
-	 * Adds a light component to light primary rendering list. Not working correctly.
+	 * Adds a light component to light primary rendering list.
 	 * @param light LightComponent to be added.
 	 */
 	public void addLightComponent(LightComponent light) {
 		container.addLight(light);
 	}
 	
-	public SimpleUniverse getCompletelyAbstractDigitalSimpleUniverse() {
+	/**
+	 * Adds a group of light component to light primary rendering list.
+	 * @param light LightComponent to be added.
+	 */
+	public void addAllLightComponent(Collection<LightComponent> light) {
+		for(LightComponent l : light) {
+			container.addLight(l);
+		}
+	}
+	
+	public synchronized SimpleUniverse getCompletelyAbstractDigitalSimpleUniverse() {
 		return universe;
 	}
 	
-	public void resetUniverseWithoutCamera() {
+	public int getDeltaTime() {
+		return deltaTime;
+	}
+	
+	public synchronized void resetUniverseWithoutCamera() {
 		universe.cleanup();
 		universe = new SimpleUniverse(canvas);
+		camera = null;
 	}
 	
 	/**
@@ -280,7 +407,7 @@ public class Universe implements Runnable {
 	 * Start the rendering process. This is the most important method of renderization sequence, and must 
 	 * be run before all other methods.
 	 */
-	public void startup() {
+	public synchronized void startup() {
 		System.out.println("Starting up rendering process...");
 		
 		Thread thread = new Thread(this);
@@ -291,14 +418,22 @@ public class Universe implements Runnable {
 	 * Finish the render of each frame, and apply vSync. This method not are obligatory, but if used, must 
 	 * stay at the last in Processing Loop.
 	 */
-	public void finishRender() {
+	public synchronized void finishRender() {
 		try {
 			if(vSyncEnable && fpsCap != 0) {
 				Thread.sleep(1000/fpsCap);
 			}
+			if(camera != null) {
+				camera.move();
+			}
+			
+			long time = System.nanoTime();
+			deltaTime = (int) ((time - lastTime) / 1000000);
+			lastTime = time;
 		} catch(Exception e) {
-			JOptionPane.showMessageDialog(null, "Error finishing rendering!", "!Error!",
+			JOptionPane.showMessageDialog(null, "Error finishing rendering!\n" + e.getMessage(), "!Error!",
 					JOptionPane.ERROR_MESSAGE);
+			e.printStackTrace();
 		}
 	}
 	
@@ -316,17 +451,27 @@ public class Universe implements Runnable {
 			universe.addBranchGraph(t.getModel());
 		}
 		
-		for(Node n : alternativeNodes) {
-			main.addChild(n);
+		if(alternativeNodes.size() != 0) {
+			for(Node n : alternativeNodes) {
+				main.addChild(n);
+			}
 		}
 		
-		for(int i = 0; i < container.listSize(); i++) {
-			main.addChild(container.getLightSpecific(i).getChild(0));
+		if(container.listSize() != 0) {
+			for(int i = 0; i < container.listSize(); i++) {
+				main.addChild(container.getLightSpecific(i));
+			}
 		}
 		
-		main.addChild(ambientLight);
+		if(alternativeNodes.size() == 0 && container.listSize() == 0) {
+			main.addChild(ambientLight);
+		}
+		
 		main.addChild(back);
 		
 		universe.addBranchGraph(main);
+		
+		lastTime = System.nanoTime();
+		deltaTime = 1;
 	}
 }
