@@ -5,6 +5,7 @@ import java.awt.event.KeyListener;
 
 import javax.media.j3d.Transform3D;
 import javax.media.j3d.TransformGroup;
+import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 
 import com.sun.j3d.utils.universe.ViewingPlatform;
@@ -27,6 +28,7 @@ public class Camera {
 		group = viewPltf.getViewPlatformTransform();
 		transform = new Transform3D();
 		transform.invert();
+		transform.lookAt(new Point3d(0f, 0f, 0f), new Point3d(-1f, -1f, -1f), new Vector3d(-1f, -1f, -1f));
 		handler = new KeyHandler();
 	}
 	
